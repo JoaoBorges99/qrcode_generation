@@ -13,13 +13,31 @@ server.listen(port, () =>{
 
 server.post('/qr_wifi', (req, res) => {
     if(req.body === undefined){
-        res.status(400).send('Body vazio');
+        req.status(400).send('Body vazio');
     }else{
         const nomeRede = req.body.nome;
         const senhaRede = req.body.senha;
         const seguranca = 'WPA2'
         const wifiData = `WIFI:T:${seguranca};S:${nomeRede};P:${senhaRede};`;
         generateQrCode(wifiData, (err, qrCodeData) => {
+            if (err) {
+                res.status(500).send({"error": err});
+                return;
+            }
+
+            res.writeHead(200, { 'Content-Type': 'image/png' });
+            res.end(Buffer.from(qrCodeData, 'binary'), 'binary');
+        });        
+    }
+
+});
+
+server.post('/qr_basico', (req, res) => {
+    if(req.body === undefined){
+        req.status(400).send('Body vazio');
+    }else{
+        const texto = req.body.conteudo;
+        generateQrCode(texto, (err, qrCodeData) => {
             if (err) {
                 res.status(500).send({"error": err});
                 return;
@@ -48,8 +66,7 @@ function generateQrCode (dados, retorno){
             res.on('data', (chunk) => rawData += chunk);
             res.on('end', () => retorno(null, rawData));
         }
-    )
-    .on('error', (e) => {
+    ).on('error', (e) => {
         retorno(e);
     });
 
